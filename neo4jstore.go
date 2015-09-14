@@ -19,20 +19,12 @@ type Neo4jStore struct {
 }
 
 type Session struct {
-	Id        int64     `json:"id(s)"`
-	Key       string    `json:"u.key"`
-	Data      string    `json:"u.data"`
-	CreatedOn time.Time `json:"u.created_on"`
-	ExpiresOn time.Time `json:"u.expires_on"`
-}
-
-// Options type
-type Options struct {
-	Path     string `json:"o.path"`
-	Domain   string `json:"o.domain"`
-	MaxAge   int    `json:"o.max_age"`
-	Secure   bool   `json:"o.secure"`
-	HttpOnly bool   `json:"o.http_only"`
+	Id         int64     `json:"id(s)"`
+	Key        string    `json:"s.key"`
+	Data       string    `json:"s.data"`
+	CreatedOn  time.Time `json:"s.created_on"`
+	ExpiresOn  time.Time `json:"s.expires_on"`
+	ModifiedOn time.Time `json:"s.modified_on"`
 }
 
 // NewNeo4jStore creates a new Neo4jStore
@@ -91,8 +83,7 @@ func (n *Neo4jStore) Get(r *http.Request, name string) (*sessions.Session, error
 }
 
 // Save adds a session to the database
-func (n *Neo4jStore) Save(
-	r *http.Request, w http.ResponseWriter, session *sessions.Session) error {
+func (n *Neo4jStore) Save(r *http.Request, w http.ResponseWriter, session *sessions.Session) error {
 	// delete cookie if MaxAge < 0
 	if session.Options.MaxAge < 0 {
 		if err := n.destroy(session); err != nil {
@@ -109,11 +100,9 @@ func (n *Neo4jStore) Save(
 			base32.StdEncoding.EncodeToString(
 				securecookie.GenerateRandomKey(32)), "=")
 	}
-
 	if err := n.save(session); err != nil {
 		return err
 	}
-
 	// Keep the session ID key in a cookie so it can be looked up in DB later.
 	encoded, err := securecookie.EncodeMulti(session.Name(), session.ID, n.Codecs...)
 	if err != nil {
@@ -124,24 +113,27 @@ func (n *Neo4jStore) Save(
 	return nil
 }
 
-func (n *Neo4jStore) load(s *sessions.Session) error {
+// load gets the session data from the database and then map back the encoded
+// data into session.Values
+func (n *Neo4jStore) load(session *sessions.Session) error {
 	r := []Session{}
 	cq := neoism.CypherQuery{
-		Statement: `MATCH (s:Session)
-								WHERE s.key = {key}
-								RETURN s.key, id(s), s.created_on, s.expires_on`,
-		Parameters: neoism.Props{"key": s.ID},
+		Statement: `MATCH (s:Session {key: {key}})
+								RETURN s.key, id(s), s.created_on, s.expires_on, s.data`,
+		Parameters: neoism.Props{"key": session.ID},
 		Result:     &r,
 	}
 	if err := n.Db.Cypher(&cq); err != nil {
 		return err
 	}
-	if len(r) > 0 {
-		return nil
+	s := &r[0]
+	if err := securecookie.DecodeMulti(session.Name(), string(s.Data), &session.Values, n.Codecs...); err != nil {
+		return err
 	}
 	return nil
 }
 
+// destroy removes a session from the database
 func (n *Neo4jStore) destroy(s *sessions.Session) error {
 	cq := neoism.CypherQuery{
 		Statement: `MATCH (s:Session {key: {key}})
@@ -155,8 +147,7 @@ func (n *Neo4jStore) destroy(s *sessions.Session) error {
 	return nil
 }
 
-// save writes encoded session.Values to a database record.
-// writes to http_sessions table by default.
+// save writes encoded session.Values to the database
 func (n *Neo4jStore) save(session *sessions.Session) error {
 	encoded, err := securecookie.EncodeMulti(session.Name(), session.Values, n.Codecs...)
 	if err != nil {
@@ -179,20 +170,30 @@ func (n *Neo4jStore) save(session *sessions.Session) error {
 			expiresOn = time.Now().Add(time.Second * time.Duration(session.Options.MaxAge))
 		}
 	}
+	var stmt string
+	if session.IsNew {
+		stmt = `CREATE (s:Session {
+						  key: {key},
+							data: {data},
+							created_on: {created_on},
+							expires_on: {expires_on},
+							modified_on: {modified_on}
+						})`
+	} else {
+		stmt = `MATCH (s:Session {key: {key}})
+            SET s.data = {data},
+                s.created_on = {created_on},
+                s.modified_on = {modified_on},
+                s.expires_on = {expires_on}`
+	}
 	cq := neoism.CypherQuery{
-		Statement: `CREATE (s:Session {
-                  key: {key},
-                  data: {data},
-                  created_on: {created_on},
-                  expires_on: {expires_on},
-                  modifield_on: {modifield_on}
-                })`,
+		Statement: stmt,
 		Parameters: neoism.Props{
-			"key":          session.ID,
-			"data":         encoded,
-			"created_on":   createdOn,
-			"expires_on":   expiresOn,
-			"modifield_on": time.Now(),
+			"key":         session.ID,
+			"data":        encoded,
+			"created_on":  createdOn,
+			"expires_on":  expiresOn,
+			"modified_on": time.Now(),
 		},
 	}
 	if err := n.Db.Cypher(&cq); err != nil {
@@ -200,30 +201,6 @@ func (n *Neo4jStore) save(session *sessions.Session) error {
 	}
 	return nil
 }
-
-// New returns a session for the given name without adding it to the registry.
-// func (m *Neo4jStore) New(r *http.Request, name string) (
-// 	*sessions.Session, error) {
-// 	session := sessions.NewSession(m, name)
-// 	session.Options = &sessions.Options{
-// 		Path:   m.Options.Path,
-// 		MaxAge: m.Options.MaxAge,
-// 	}
-// 	session.IsNew = true
-// 	var err error
-// 	if cook, errToken := m.Token.GetToken(r, name); errToken == nil {
-// 		err = securecookie.DecodeMulti(name, cook, &session.ID, m.Codecs...)
-// 		if err == nil {
-// 			err = m.load(session)
-// 			if err == nil {
-// 				session.IsNew = false
-// 			} else {
-// 				err = nil
-// 			}
-// 		}
-// 	}
-// 	return session, err
-// }
 
 // MaxLength restricts the maximum length of new sessions to l.
 func (n *Neo4jStore) MaxLength(l int) {
