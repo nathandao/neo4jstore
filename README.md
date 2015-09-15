@@ -43,6 +43,8 @@ if err = sessions.Save(req, rsp); err != nil {
 
 Before running the tests, make sure you have neo4j installed and running at ```localhost:7474``` with ```username: neo4j``` and ```password: foobar```
 
+WARNING: make sure you are runny the test on a separate database. Since there is a clean up function that wipes out the whole database after each test.
+
 ## Thanks
 
 I've stolen, borrowed and gotten inspiration from the other backends available - especially pgstore.
