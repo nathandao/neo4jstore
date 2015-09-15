@@ -29,7 +29,11 @@ type Session struct {
 }
 
 // NewNeo4jStore creates a new Neo4jStore
-func NewNeo4jStore(db *neoism.Database, keyPairs ...[]byte) *Neo4jStore {
+func NewNeo4jStore(url string, keyPairs ...[]byte) *Neo4jStore {
+	db, err := neoism.Connect(url)
+	if err != nil {
+		panic(err)
+	}
 	cs := &Neo4jStore{
 		Codecs: securecookie.CodecsFromPairs(keyPairs...),
 		Options: &sessions.Options{
