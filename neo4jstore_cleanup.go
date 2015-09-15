@@ -5,7 +5,7 @@ import (
 )
 
 func Cleanup() {
-	db, _ := neoism.Connect(dbUrl)
+	db, _ := neoism.Connect("http://neo4j:foobar@localhost:7474")
 	cq := neoism.CypherQuery{
 		Statement: `MATCH (n) OPTIONAL MATCH (n)-[r]-() DELETE n,r`,
 	}
