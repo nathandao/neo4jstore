@@ -26,7 +26,7 @@ func (ho headerOnlyResponseWriter) WriteHeader(int) {
 
 const (
 	secret = "EyaC2BPcJtNqU3tjEHy+c+Wmqc1yihYIbUWEl/jk0Ga73kWBclmuSFd9HuJKwJw/Wdsh1XnjY2Bw1HBVph6WOw=="
-	dbUrl  = "http://neo4j:admin@localhost:7474"
+	dbUrl  = "http://neo4j:foobar@localhost:7474"
 )
 
 func TestNeo4jStore(t *testing.T) {
