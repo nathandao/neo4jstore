@@ -7,14 +7,7 @@ This implementation is based on the [postgresql implementation](https://github.c
 # Usage
 
 ```go
-package main()
-
-import(
-  "github.com/gorilla/securecookie"
-  "github.com/gorilla/sessions"
-  "github.com/jmcvetta/neoism"
-  "github.com/nathandao/neo4jstore"
-)
+//...
 
 const(
   DbUrl = "http://user:password@localhost:7474"
