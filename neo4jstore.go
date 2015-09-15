@@ -18,6 +18,7 @@ type Neo4jStore struct {
 	Codecs  []securecookie.Codec
 }
 
+// Session type is used to map session data to Neo4J database
 type Session struct {
 	Id         int64     `json:"id(s)"`
 	Key        string    `json:"s.key"`
@@ -39,16 +40,6 @@ func NewNeo4jStore(db *neoism.Database, keyPairs ...[]byte) *Neo4jStore {
 	}
 	cs.MaxAge(cs.Options.MaxAge)
 	return cs
-}
-
-func (n *Neo4jStore) MaxAge(age int) {
-	n.Options.MaxAge = age
-	// Set the maxAge for each securecookie instance.
-	for _, codec := range n.Codecs {
-		if sc, ok := codec.(*securecookie.SecureCookie); ok {
-			sc.MaxAge(age)
-		}
-	}
 }
 
 // New creates a new session
@@ -111,6 +102,26 @@ func (n *Neo4jStore) Save(r *http.Request, w http.ResponseWriter, session *sessi
 
 	http.SetCookie(w, sessions.NewCookie(session.Name(), encoded, session.Options))
 	return nil
+}
+
+// MaxLength restricts the maximum length of new sessions to l.
+func (n *Neo4jStore) MaxLength(l int) {
+	for _, c := range n.Codecs {
+		if codec, ok := c.(*securecookie.SecureCookie); ok {
+			codec.MaxLength(l)
+		}
+	}
+}
+
+// MaxAge sets the Neo4jStore's max age options
+func (n *Neo4jStore) MaxAge(age int) {
+	n.Options.MaxAge = age
+	// Set the maxAge for each securecookie instance.
+	for _, codec := range n.Codecs {
+		if sc, ok := codec.(*securecookie.SecureCookie); ok {
+			sc.MaxAge(age)
+		}
+	}
 }
 
 // load gets the session data from the database and then map back the encoded
@@ -200,13 +211,4 @@ func (n *Neo4jStore) save(session *sessions.Session) error {
 		return err
 	}
 	return nil
-}
-
-// MaxLength restricts the maximum length of new sessions to l.
-func (n *Neo4jStore) MaxLength(l int) {
-	for _, c := range n.Codecs {
-		if codec, ok := c.(*securecookie.SecureCookie); ok {
-			codec.MaxLength(l)
-		}
-	}
 }
