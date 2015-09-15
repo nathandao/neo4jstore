@@ -1,3 +1,4 @@
+
 # Neo4jStore - gorilla/sessions
 
 A session storage backend for [gorilla/sessions](http://www.gorillatoolkit.org/pkg/sessions) - [src](https://github.com/gorilla/sessions).
@@ -38,9 +39,13 @@ if err = sessions.Save(req, rsp); err != nil {
 }
 ```
 
+## Testing
+
+Before running the tests, make sure you have neo4j installed and running at ```localhost:7474``` with ```username: neo4j``` and ```password: foobar```
+
 ## Thanks
 
-I've stolen, borrowed and gotten inspiration from the other backends available - especially pgstore
+I've stolen, borrowed and gotten inspiration from the other backends available - especially pgstore.
 
 * [pgstore](https://github.com/antonlindstrom/pgstore)
 * [redistore](https://github.com/boj/redistore)
