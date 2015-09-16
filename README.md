@@ -4,7 +4,7 @@ A session storage backend for [gorilla/sessions](http://www.gorillatoolkit.org/p
 
 This implementation is based on the [postgresql implementation](https://github.com/antonlindstrom/pgstore). In fact, I copy the whole pgs backend implementation tests with a few modifications to fit the context of Neo4j.
 
-[![Build Status](https://travis-ci.org/nathandao/neo4jstore.svg?branch=master)](https://travis-ci.org/nathandao/neo4jstore)
+[![Build Status](https://travis-ci.org/nathandao/neo4jstore.svg?branch=master)](https://travis-ci.org/nathandao/neo4jstore) [![GoDoc](https://godoc.org/github.com/nathandao/neo4jstore?status.svg)](https://godoc.org/github.com/nathandao/neo4jstore)
 
 # Usage
 
