@@ -17,7 +17,10 @@ const(
 )
 
 // Fetch new store.
-store := NewNeo4jStore(DbUrl, []byte(SecretKey))
+store, err := NewNeo4jStore(DbUrl, []byte(SecretKey))
+if (err != nil) {
+  panic(err)
+}
 
 // Get a session.
 session, err = store.Get(req, "session-key")

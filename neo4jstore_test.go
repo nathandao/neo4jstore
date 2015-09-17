@@ -31,7 +31,7 @@ const (
 func TestNeo4jStore(t *testing.T) {
 	defer Cleanup()
 
-	ss := NewNeo4jStore(dbUrl, []byte(secret))
+	ss, _ := NewNeo4jStore(dbUrl, []byte(secret))
 	if ss == nil {
 		t.Fatal("This test requires a real database")
 	}
@@ -116,7 +116,7 @@ func TestNeo4jStore(t *testing.T) {
 func TestSessionOptionsAreUniquePerSession(t *testing.T) {
 	defer Cleanup()
 
-	ss := NewNeo4jStore(dbUrl, []byte(secret))
+	ss, _ := NewNeo4jStore(dbUrl, []byte(secret))
 	if ss == nil {
 		t.Fatal("This test requires a real database")
 	}

@@ -29,10 +29,10 @@ type Session struct {
 }
 
 // NewNeo4jStore creates a new Neo4jStore
-func NewNeo4jStore(url string, keyPairs ...[]byte) *Neo4jStore {
+func NewNeo4jStore(url string, keyPairs ...[]byte) (*Neo4jStore, error) {
 	db, err := neoism.Connect(url)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	cs := &Neo4jStore{
 		Codecs: securecookie.CodecsFromPairs(keyPairs...),
@@ -43,7 +43,7 @@ func NewNeo4jStore(url string, keyPairs ...[]byte) *Neo4jStore {
 		Db: db,
 	}
 	cs.MaxAge(cs.Options.MaxAge)
-	return cs
+	return cs, nil
 }
 
 // New creates a new session
